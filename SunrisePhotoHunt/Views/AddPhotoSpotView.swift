@@ -21,6 +21,8 @@ struct AddPhotoSpotView: View {
     
     @State private var selectedPhotos: [PhotosPickerItem] = []
     @State private var isSaving = false
+    
+    @State private var plannedDate = Date()
 
     var body: some View {
         NavigationStack {
@@ -37,6 +39,16 @@ struct AddPhotoSpotView: View {
                     Picker("Status", selection: $isPhotographed) {
                         Text("Planned").tag(false)
                         Text("Photographed").tag(true)
+                    }
+                }
+                
+                if !isPhotographed {
+                    Section("Planning") {
+                        DatePicker(
+                            "Planned Date",
+                            selection: $plannedDate,
+                            displayedComponents: .date
+                        )
                     }
                 }
                 
@@ -73,7 +85,7 @@ struct AddPhotoSpotView: View {
                                 notes: notes,
                                 latitude: coordinate.latitude,
                                 longitude: coordinate.longitude,
-                                plannedDate: .now,
+                                plannedDate: plannedDate,
                                 isPhotographed: isPhotographed,
                                 createdAt: .now
                             )

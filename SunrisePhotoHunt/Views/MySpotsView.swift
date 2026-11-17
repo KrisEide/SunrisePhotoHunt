@@ -1,6 +1,7 @@
 
 import SwiftUI
 import SwiftData
+import CoreLocation
 
 struct MySpotsView: View {
 
@@ -10,52 +11,70 @@ struct MySpotsView: View {
 
     // Fotostedet brukeren velger fra listen.
     @State private var selectedSpot: PhotoSpot?
+    
+    // Gir tilgang til brukerens posisjon.
+    @Environment(UserLocationRepository.self)
+    private var userLocationRepository
 
     var body: some View {
         NavigationStack {
             List {
+                
                 ForEach(photoSpots) { spot in
                     Button {
                         selectedSpot = spot
                     } label: {
                         HStack(spacing: 12) {
-                            Image(systemName: "camera.fill")
-                                .foregroundStyle(.orange)
 
-                            VStack(alignment: .leading, spacing: 4) {
+                            VStack(alignment: .leading, spacing: 10) {
                                 Text(spot.title)
                                     .font(.headline)
 
-                                if !spot.notes.isEmpty {
-                                    Text(spot.notes)
-                                        .font(.subheadline)
-                                        .foregroundStyle(.secondary)
-                                        .lineLimit(2)
-                                }
-                            }
-                            
-                            // Viser om fotostedet er planlagt eller fotografert.
-                            if spot.isPhotographed {
-                                Label("Photographed", systemImage: "checkmark.circle.fill")
-                                    .foregroundStyle(.green)
-                                    .font(.caption)
-                            } else {
-                                Label("Planned", systemImage: "clock")
-                                    .foregroundStyle(.secondary)
-                                    .font(.caption)
-                            }
+                                HStack(spacing: 16) {
 
+                                    // Viser avstand til fotostedet.
+                                    if let userLocation = userLocationRepository.currentLocation {
+                                        let spotLocation = CLLocation(
+                                            latitude: spot.latitude,
+                                            longitude: spot.longitude
+                                        )
+
+                                        let distance = userLocation.distance(from: spotLocation)
+
+                                        Label(
+                                            "\(distance / 1000, specifier: "%.1f") km",
+                                            systemImage: "location"
+                                        )
+                                        .foregroundStyle(.secondary)
+                                    }
+
+                                    // Viser statusen til fotostedet.
+                                    if spot.isPhotographed {
+                                        Label("Photographed", systemImage: "checkmark.circle.fill")
+                                            .foregroundStyle(.green)
+                                    } else {
+                                        Label("Planned", systemImage: "clock")
+                                            .foregroundStyle(.orange)
+                                    }
+                                }
+                                .font(.caption)
+                            }
 
                             Spacer()
 
                             Image(systemName: "chevron.right")
                                 .foregroundStyle(.secondary)
                         }
+                        .padding(.vertical, 12)
                     }
                     .buttonStyle(.plain)
                 }
+
             }
             .navigationTitle("My Spots")
+            .onAppear {
+                userLocationRepository.requestAuthorization()
+            }
 
             // Viser en melding hvis brukeren ikke har lagret noen steder.
             .overlay {

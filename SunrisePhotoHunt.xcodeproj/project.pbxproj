@@ -274,7 +274,7 @@
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = SunrisePhotoHunt/Info.plist;
-				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Sunrise Photo Hunt uses your location to show your position on the map and the distance to your photo spots.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Sunrise Photo Hunt uses your location to show your position on the map and the distance to your photo spots.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -316,7 +316,7 @@
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = SunrisePhotoHunt/Info.plist;
-				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Sunrise Photo Hunt uses your location to show your position on the map and the distance to your photo spots.";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Sunrise Photo Hunt uses your location to show your position on the map and the distance to your photo spots.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;

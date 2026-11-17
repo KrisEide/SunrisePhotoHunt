@@ -38,6 +38,16 @@ struct EditPhotoSpotView: View {
                 }
             }
             
+            if !spot.isPhotographed {
+                Section("Planning") {
+                    DatePicker(
+                        "Planned Date",
+                        selection: $spot.plannedDate,
+                        displayedComponents: .date
+                    )
+                }
+            }
+            
             
             
             Section("Photos") {
