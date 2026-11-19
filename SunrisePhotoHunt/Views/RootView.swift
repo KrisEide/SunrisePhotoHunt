@@ -17,6 +17,10 @@ struct RootView: View {
             Tab("My Gallery", systemImage: "photo.on.rectangle") {
                 PhotoGalleryView()
             }
+            
+            Tab("Light Guide", systemImage: "book.closed") {
+                LightGuideView()
+            }
         }
     }
 }

@@ -85,46 +85,107 @@ struct PhotoSpotDetailView: View {
             }
             
             
+            
             if !spot.isPhotographed {
-                Section("Sun Times") {
+                Section("Light Timeline") {
 
                     if let times = sunTimes {
 
-                        if let sunrise = times.sunrise {
-                            HStack {
-                                Text("Sunrise")
-                                Spacer()
-                                Text(formattedTime(sunrise, timeZoneID: times.tzid))
-                            }
-                        } else {
-                            Text("Sunrise unavailable")
+                        VStack(alignment: .leading, spacing: 16) {
+
+                            Text("MORNING")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+
+                            timelineRow(
+                                icon: "moon.stars",
+                                color: .blue,
+                                title: "Blue Hour",
+                                time: formattedPeriod(times.blue_hour?.morning, timeZoneID: times.tzid),
+                                description: "Blue light before sunrise"
+                            )
+
+                            timelineRow(
+                                icon: "sun.max",
+                                color: .orange,
+                                title: "Golden Hour",
+                                time: formattedPeriod(times.golden_hour?.morning, timeZoneID: times.tzid),
+                                description: "Soft light around sunrise"
+                            )
+
+                            timelineRow(
+                                icon: "sunrise",
+                                color: .orange,
+                                title: "Sunrise",
+                                time: times.sunrise.map {
+                                    formattedTime($0, timeZoneID: times.tzid)
+                                } ?? "Unavailable",
+                                description: "The sun rises during Golden Hour",
+                                showLine: false
+                            )
+
+                            Divider()
+
+                            Text("AFTERNOON / EVENING")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+
+                            timelineRow(
+                                icon: "sun.max",
+                                color: .orange,
+                                title: "Golden Hour",
+                                time: formattedPeriod(times.golden_hour?.evening, timeZoneID: times.tzid),
+                                description: "Low sun and soft light"
+                            )
+
+                            timelineRow(
+                                icon: "sunset",
+                                color: .orange,
+                                title: "Sunset",
+                                time: times.sunset.map {
+                                    formattedTime($0, timeZoneID: times.tzid)
+                                } ?? "Unavailable",
+                                description: "The sun sets during Golden Hour"
+                            )
+
+                            timelineRow(
+                                icon: "moon.stars",
+                                color: .blue,
+                                title: "Blue Hour",
+                                time: formattedPeriod(times.blue_hour?.evening, timeZoneID: times.tzid),
+                                description: "Blue light after sunset",
+                                showLine: false
+                            )
+
+                            Link(
+                                "Sun data by Sunrise-Sunset.org",
+                                destination: URL(string: "https://sunrise-sunset.org")!
+                            )
+                            .font(.caption2)
+                            
                         }
+                        .padding(.vertical, 8)
 
-                        if let sunset = times.sunset {
-                            HStack {
-                                Text("Sunset")
-                                Spacer()
-                                Text(formattedTime(sunset, timeZoneID: times.tzid))
-                            }
-                        } else {
-                            Text("Sunset unavailable")
-                        }
-
-                        Link(
-                            "Sun data by Sunrise-Sunset.org",
-                            destination: URL(string: "https://sunrise-sunset.org")!
-                        )
-                        .font(.caption)
-
+                    
                     } else if sunTimesError {
+
                         Text("Could not load sun times.")
                             .foregroundStyle(.secondary)
+
+                        Button("Try Again") {
+                            Task {
+                                await loadSunTimes()
+                            }
+                        }
+
 
                     } else {
                         ProgressView("Loading sun times...")
                     }
                 }
             }
+
+
 
 
 
@@ -155,24 +216,26 @@ struct PhotoSpotDetailView: View {
         }
         .navigationTitle("Spot Details")
         .navigationBarTitleDisplayMode(.inline)
+        
         .toolbar {
-            ToolbarItem(placement: .cancellationAction) {
+            ToolbarItemGroup(placement: .bottomBar) {
                 Button("Done") {
                     dismiss()
                 }
-            }
 
-            ToolbarItem(placement: .primaryAction) {
+                Spacer()
+
                 Button("Edit") {
                     isEditing = true
                 }
             }
         }
+
         // Åpner en egen skjerm for å redigere fotostedet.
+        
         
         .sheet(isPresented: $isEditing, onDismiss: {
             if shouldDeleteSpot {
-                // Sletter stedet etter at redigeringsvinduet er lukket.
                 modelContext.delete(spot)
                 dismiss()
             }
@@ -183,46 +246,110 @@ struct PhotoSpotDetailView: View {
                     isEditing = false
                 }
             }
-            
-            
-            .task(id: spot.isPhotographed ? nil : spot.plannedDate) {
-
-                // Henter bare soltider for planlagte fotosteder.
-                guard !spot.isPhotographed else {
-                    sunTimes = nil
-                    return
-                }
-
-                sunTimes = nil
-                sunTimesError = false
-
-                do {
-                    sunTimes = try await SunriseService().fetchSunTimes(
-                        latitude: spot.latitude,
-                        longitude: spot.longitude,
-                        date: spot.plannedDate
-                    )
-                } catch {
-                    sunTimesError = true
-                    print("Error loading sun times: \(error)")
-                }
-            }
-            
-            
-
-        } // end of body
-        
-        
-        // Formaterer klokkeslettet etter fotostedets tidssone.
-        private func formattedTime(_ date: Date, timeZoneID: String) -> String {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "HH:mm"
-            formatter.timeZone = TimeZone(identifier: timeZoneID) ?? .current
-
-            return formatter.string(from: date)
         }
 
-        
-
+        .task(id: spot.isPhotographed ? nil : spot.plannedDate) {
+            await loadSunTimes()
+        }
     }
+
+    // Formaterer klokkeslettet etter fotostedets tidssone.
+    private func formattedTime(_ date: Date, timeZoneID: String) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm"
+        formatter.timeZone = TimeZone(identifier: timeZoneID) ?? .current
+
+        return formatter.string(from: date)
+    }
+    
+    
+    // Henter soltider for det valgte fotostedet.
+    private func loadSunTimes() async {
+
+        guard !spot.isPhotographed else {
+            sunTimes = nil
+            return
+        }
+
+        sunTimes = nil
+        sunTimesError = false
+
+        do {
+            sunTimes = try await SunriseService().fetchSunTimes(
+                latitude: spot.latitude,
+                longitude: spot.longitude,
+                date: spot.plannedDate
+            )
+        } catch {
+            if !Task.isCancelled {
+                sunTimesError = true
+                print("Error loading sun times: \(error)")
+            }
+        }
+    }
+
+    
+    
+    // Formaterer start- og sluttidspunkt for en lysperiode.
+    private func formattedPeriod(_ period: LightPeriod?, timeZoneID: String) -> String {
+
+        guard let begin = period?.begin,
+              let end = period?.end else {
+            return "Unavailable"
+        }
+
+        let startTime = formattedTime(begin, timeZoneID: timeZoneID)
+        let endTime = formattedTime(end, timeZoneID: timeZoneID)
+
+        return "\(startTime) – \(endTime)"
+    }
+    
+    
+    // Lager en rad i tidslinjen med ikon, tidspunkt og beskrivelse.
+    private func timelineRow(
+        icon: String,
+        color: Color,
+        title: String,
+        time: String,
+        description: String,
+        showLine: Bool = true
+    ) -> some View {
+
+        HStack(alignment: .top, spacing: 12) {
+
+            VStack(spacing: 4) {
+
+                Image(systemName: icon)
+                    .foregroundStyle(color)
+                    .frame(width: 24, height: 24)
+
+                // Viser en linje ned mot neste tidspunkt.
+                if showLine {
+                    Rectangle()
+                        .fill(Color.gray.opacity(0.25))
+                        .frame(width: 2, height: 32)
+                }
+            }
+
+            VStack(alignment: .leading, spacing: 8) {
+
+                HStack(alignment: .firstTextBaseline) {
+                    Text(title)
+                        .bold()
+
+                    Spacer(minLength: 8)
+
+                    Text(time)
+                        .fontWeight(title == "Sunrise" || title == "Sunset" ? .bold : .regular)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                }
+
+                
+            }
+        }
+    }
+
+
 }
