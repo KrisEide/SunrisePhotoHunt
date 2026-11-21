@@ -90,7 +90,9 @@ struct AddPhotoSpotView: View {
                                 createdAt: .now
                             )
 
-                            // Legger de valgte bildene til fotostedet.
+                            // Jeg ønsket at brukeren skulle kunne legge til flere bilder på samme
+                            // fotosted. Derfor gjør jeg de valgte bildene om til Data og legger
+                            // dem til som SpotPhoto-objekter som kan lagres med SwiftData.
                             for photo in selectedPhotos {
                                 if let data = try? await photo.loadTransferable(type: Data.self) {
                                     newSpot.photos.append(SpotPhoto(imageData: data))

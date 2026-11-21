@@ -14,7 +14,10 @@ final class PhotoSpot {
     var photoData: Data? // Legge til bilde er valgfritt
     var createdAt: Date
     
-    // Bildene som tilhører fotostedet.
+    // Jeg har valgt å lagre bildene som egne objekter slik at hvert fotosted
+    // kan ha flere bilder. Med cascade slettes bildene sammen med fotostedet.
+    // Hvis jeg skulle jobbet videre med appen, kunne det vært lurt å gjøre
+    // brukeren ekstra oppmerksom på dette før de sletter et fotosted.
     @Relationship(deleteRule: .cascade)
     var photos: [SpotPhoto] = []
     

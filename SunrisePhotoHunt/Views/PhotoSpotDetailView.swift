@@ -85,7 +85,8 @@ struct PhotoSpotDetailView: View {
             }
             
             
-            
+            // -------------------------------------------------------
+            //Her starter lys tidslinjen
             if !spot.isPhotographed {
                 Section("Light Timeline") {
 
@@ -101,16 +102,22 @@ struct PhotoSpotDetailView: View {
                                 icon: "moon.stars",
                                 color: .blue,
                                 title: "Blue Hour",
-                                time: formattedPeriod(times.blue_hour?.morning, timeZoneID: times.tzid),
-                                description: "Blue light before sunrise"
+                                time: formattedPeriod(
+                                    times.blue_hour?.morning,
+                                    timeZoneID: times.tzid
+                                ),
+                                
                             )
 
                             timelineRow(
                                 icon: "sun.max",
                                 color: .orange,
                                 title: "Golden Hour",
-                                time: formattedPeriod(times.golden_hour?.morning, timeZoneID: times.tzid),
-                                description: "Soft light around sunrise"
+                                time: formattedPeriod(
+                                    times.golden_hour?.morning,
+                                    timeZoneID: times.tzid
+                                ),
+                                
                             )
 
                             timelineRow(
@@ -120,7 +127,6 @@ struct PhotoSpotDetailView: View {
                                 time: times.sunrise.map {
                                     formattedTime($0, timeZoneID: times.tzid)
                                 } ?? "Unavailable",
-                                description: "The sun rises during Golden Hour",
                                 showLine: false
                             )
 
@@ -135,7 +141,6 @@ struct PhotoSpotDetailView: View {
                                 color: .orange,
                                 title: "Golden Hour",
                                 time: formattedPeriod(times.golden_hour?.evening, timeZoneID: times.tzid),
-                                description: "Low sun and soft light"
                             )
 
                             timelineRow(
@@ -145,7 +150,6 @@ struct PhotoSpotDetailView: View {
                                 time: times.sunset.map {
                                     formattedTime($0, timeZoneID: times.tzid)
                                 } ?? "Unavailable",
-                                description: "The sun sets during Golden Hour"
                             )
 
                             timelineRow(
@@ -153,7 +157,6 @@ struct PhotoSpotDetailView: View {
                                 color: .blue,
                                 title: "Blue Hour",
                                 time: formattedPeriod(times.blue_hour?.evening, timeZoneID: times.tzid),
-                                description: "Blue light after sunset",
                                 showLine: false
                             )
 
@@ -218,13 +221,13 @@ struct PhotoSpotDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         
         .toolbar {
-            ToolbarItemGroup(placement: .bottomBar) {
+            ToolbarItem(placement: .cancellationAction) {
                 Button("Done") {
                     dismiss()
                 }
+            }
 
-                Spacer()
-
+            ToolbarItem(placement: .primaryAction) {
                 Button("Edit") {
                     isEditing = true
                 }
@@ -247,13 +250,19 @@ struct PhotoSpotDetailView: View {
                 }
             }
         }
-
+        
+        // Jeg har valgt å hente soltidene når brukeren åpner et fotosted,
+        // slik at informasjonen alltid er basert på stedets koordinater og
+        // planlagte dato. Soltidene lagres derfor ikke permanent i SwiftData.
         .task(id: spot.isPhotographed ? nil : spot.plannedDate) {
             await loadSunTimes()
         }
     }
 
-    // Formaterer klokkeslettet etter fotostedets tidssone.
+    // Jeg bruker tidssonen fra API-et slik at soltidene vises i lokal tid
+    // for fotostedet. Hvis jeg for eksempel lagrer et sted i Japan,
+    // vil tidene vises i japansk tid, selv om jeg er i Norge.
+    
     private func formattedTime(_ date: Date, timeZoneID: String) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "HH:mm"
@@ -281,6 +290,8 @@ struct PhotoSpotDetailView: View {
                 date: spot.plannedDate
             )
         } catch {
+            // Hvis brukeren lukker visningen mens API-kallet pågår, kan oppgaven
+            // bli avbrutt. Da vil jeg ikke behandle det som en vanlig nettverksfeil.
             if !Task.isCancelled {
                 sunTimesError = true
                 print("Error loading sun times: \(error)")
@@ -311,7 +322,6 @@ struct PhotoSpotDetailView: View {
         color: Color,
         title: String,
         time: String,
-        description: String,
         showLine: Bool = true
     ) -> some View {
 
@@ -323,7 +333,8 @@ struct PhotoSpotDetailView: View {
                     .foregroundStyle(color)
                     .frame(width: 24, height: 24)
 
-                // Viser en linje ned mot neste tidspunkt.
+                // Jeg ønsket å koble sammen ikonene i tidslinjen med en tynn strek.
+                // Derfor bruker jeg et smalt rektangel som plasseres under hvert ikon.
                 if showLine {
                     Rectangle()
                         .fill(Color.gray.opacity(0.25))
